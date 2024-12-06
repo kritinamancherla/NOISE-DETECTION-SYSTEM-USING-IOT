@@ -1,0 +1,75 @@
+//Sensor Data Acquisition
+
+#include <Arduino.h>
+
+const int soundSensorPin = A0; // Pin connected to the sound sensor
+int noiseLevel;
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(soundSensorPin, INPUT);
+}
+
+void loop() {
+  noiseLevel = analogRead(soundSensorPin); // Read sensor value
+  float decibels = map(noiseLevel, 0, 1023, 30, 120); // Convert to dB
+  Serial.print("Noise Level: ");
+  Serial.print(decibels);
+  Serial.println(" dB");
+  delay(1000); // Sampling interval
+}
+//Data Transmission to IoT Platform
+
+#include <WiFi.h>
+#include <HTTPClient.h>
+
+const char* ssid = "YourWiFiSSID";
+const char* password = "YourWiFiPassword";
+const char* serverUrl = "https://api.thingspeak.com/update?api_key=YOUR_API_KEY";
+
+void setup() {
+  Serial.begin(115200);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("Connected to WiFi");
+}
+
+void loop() {
+  int noiseLevel = analogRead(soundSensorPin);
+  float decibels = map(noiseLevel, 0, 1023, 30, 120);
+
+  if(WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    String url = serverUrl + "&field1=" + String(decibels);
+    http.begin(url);
+    int httpResponseCode = http.GET();
+    Serial.print("HTTP Response code: ");
+    Serial.println(httpResponseCode);
+    http.end();
+  }
+  delay(10000); // Send data every 10 seconds
+}
+// Alert Trigger
+
+#include <IFTTTWebhook.h>
+
+#define EVENT_NAME "noise_alert"
+#define IFTTT_KEY "YOUR_IFTTT_KEY"
+
+IFTTTWebhook ifttt(IFTTT_KEY);
+
+void sendAlert(float decibels) {
+  ifttt.triggerEvent(EVENT_NAME, String(decibels), "Noise threshold exceeded!");
+}
+
+void loop() {
+  float decibels = map(analogRead(soundSensorPin), 0, 1023, 30, 120);
+  if (decibels > 80.0) { // Threshold
+    sendAlert(decibels);
+    delay(60000); // Avoid spamming alerts
+  }
+  delay(1000);
+}
