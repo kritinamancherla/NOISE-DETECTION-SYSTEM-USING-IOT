@@ -42,3 +42,7 @@ MQTT, HTTP/HTTPS for data transmission
 Wi-Fi or LoRa for connectivity
 Mobile App (optional): Flutter or React Native for real-time monitoring.
 
+## Licensing
+- The file `report.pdf` in this repository is licensed under the [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/).
+
+
